@@ -5,21 +5,25 @@ import seaborn as sns
 from IPython.display import SVG
 import matplotlib.pyplot as plt
 
-#Pairwise diversity
-def treediversity(ts):
-    stat = 0
+#Pairwise diversity with windows
+def treediversity(ts,windows=[0,1]):
+    stat = [0]*(len(windows)-1)
     n = ts.num_samples
     for tree in ts.trees():
-        f = 0
-        for mutation in tree.mutations():
-            x = tree.num_samples(mutation.node)
-            f += x*(n-x)/(n*(n-1)/2)
-        stat += f
+        for site in tree.sites():
+            position = site.position
+            window_index = sum([windows[i] <= position for i in range(0,len(windows))])
+            for mutation in site.mutations:
+                #mut = mutation.site(mutation)
+                #position = mut.position()
+                x = tree.num_samples(mutation.node)
+                f = x*(n-x)/(n*(n-1)/2)
+                stat[window_index-1] += f/(windows[window_index]-windows[window_index-1])
     return(stat)
 
 ts0 = msprime.simulate(5,mutation_rate = 0.1,recombination_rate=0,random_seed=5)
 ts1 = msprime.simulate(5,mutation_rate = 0.1,recombination_rate=0.1,random_seed=6)
-ts2 = msprime.simulate(10,mutation_rate = 0.1,recombination_rate=0.5,random_seed=7)
+ts2 = msprime.simulate(30,mutation_rate = 2,recombination_rate=0.5,random_seed=7)
 ts3 = msprime.simulate(105,mutation_rate = 2,recombination_rate=1,random_seed=8)
 print(treediversity(ts0))
 print(ts0.diversity())
@@ -27,8 +31,12 @@ print(treediversity(ts1))
 print(ts1.diversity())
 print(treediversity(ts2))
 print(ts2.diversity())
-print(treediversity(ts3))
-print(ts3.diversity())
+windows = [0,0.4,0.5,1]
+print(treediversity(ts3,windows=windows))
+print(ts3.diversity(windows=windows))
+windows = [0,0.2,0.33,0.5,0.7,0.9,1]
+print(ts0.diversity(windows=windows))
+print(treediversity(ts0,windows=windows))
 
 #Tajima's D
 def TajimaD(ts):
@@ -82,3 +90,49 @@ print(TajimaD(ts3))
 ts4 = msprime.simulate(population_configurations=pop_configs,migration_matrix=M,mutation_rate = 0.1,recombination_rate=0.4,random_seed=6)
 print(ts4.Tajimas_D())
 print(TajimaD(ts4))
+
+#F2
+pop_configs = [
+    msprime.PopulationConfiguration(sample_size=3),
+    msprime.PopulationConfiguration(sample_size=3)
+]
+M= np.array([
+    [0,0],
+    [0.2,0]
+])
+
+ts = msprime.simulate(population_configurations=pop_configs,migration_matrix=M,mutation_rate = 0.07,recombination_rate=0,random_seed=4)
+for tree in ts.trees():
+    node_colours={u: colour_map[tree.population(u)] for u in tree.nodes()}
+    display(SVG(tree.draw(node_colours=node_colours)))
+
+def F2(ts,pops):
+    n1 = len(pops[0])
+    n2 = len(pops[1])
+    stat = 0
+    for tree in ts.trees(tracked_samples=pops[0]):
+        for mutation in ts.mutations():
+            #phat1 = tree.num_tracked_samples(mutation.node)/n1
+            #phat2 = (tree.num_samples(mutation.node)-tree.num_tracked_samples(mutation.node))/n2
+            #print(phat1,phat2)
+            #stat += phat1 - phat2 -phat1*(1-phat1)/(n1-1) - phat2*(1-phat2)/(n2-1)
+            x1 = tree.num_tracked_samples(mutation.node)
+            x2 = tree.num_samples(mutation.node) -tree.num_tracked_samples(mutation.node)
+            f = (x1*(n2-x2) + x2*(n1-x1))/(n1*n2) - x1*(n1-x1)/(2*n1) - x2*(n2-x2)/(2*n2)
+            stat += f
+    return(stat)
+pops = [[0,1,2],[3,4,5]]     
+print(F2(ts,pops))
+print(ts.f2(pops))
+ts1 = msprime.simulate(population_configurations=pop_configs,migration_matrix=M,mutation_rate = 0.07,recombination_rate=0,random_seed=5)
+ts2 = msprime.simulate(population_configurations=pop_configs,migration_matrix=M,mutation_rate = 0.07,recombination_rate=0,random_seed=6)
+ts3 = msprime.simulate(population_configurations=pop_configs,migration_matrix=M,mutation_rate = 0.07,recombination_rate=0,random_seed=7)
+ts4 = msprime.simulate(population_configurations=pop_configs,migration_matrix=M,mutation_rate = 0.07,recombination_rate=1,random_seed=8)
+print(F2(ts1,pops))
+print(ts1.f2(pops))
+print(F2(ts2,pops))
+print(ts2.f2(pops))
+print(F2(ts3,pops))
+print(ts3.f2(pops))
+print(F2(ts4,pops))
+print(ts4.f2(pops))
