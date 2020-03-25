@@ -106,28 +106,41 @@ for tree in ts.trees():
     node_colours={u: colour_map[tree.population(u)] for u in tree.nodes()}
     display(SVG(tree.draw(node_colours=node_colours)))
 
+#F2
+pop_configs = [
+    msprime.PopulationConfiguration(sample_size=3),
+    msprime.PopulationConfiguration(sample_size=4)
+]
+M= np.array([
+    [0,0],
+    [0.2,0]
+])
+
+ts = msprime.simulate(population_configurations=pop_configs,migration_matrix=M,mutation_rate = 0.07,recombination_rate=0,random_seed=4)
+for tree in ts.trees():
+    node_colours={u: colour_map[tree.population(u)] for u in tree.nodes()}
+    display(SVG(tree.draw(node_colours=node_colours)))
+    
 def F2(ts,pops):
     n1 = len(pops[0])
     n2 = len(pops[1])
     stat = 0
-    for tree in ts.trees(tracked_samples=pops[0]):
-        for mutation in ts.mutations():
-            #phat1 = tree.num_tracked_samples(mutation.node)/n1
-            #phat2 = (tree.num_samples(mutation.node)-tree.num_tracked_samples(mutation.node))/n2
-            #print(phat1,phat2)
-            #stat += phat1 - phat2 -phat1*(1-phat1)/(n1-1) - phat2*(1-phat2)/(n2-1)
-            x1 = tree.num_tracked_samples(mutation.node)
-            x2 = tree.num_samples(mutation.node) -tree.num_tracked_samples(mutation.node)
-            f = (x1*(n2-x2) + x2*(n1-x1))/(n1*n2) - x1*(n1-x1)/(2*n1) - x2*(n2-x2)/(2*n2)
-            stat += f
+    for breakpoint, tree in enumerate(ts.trees(tracked_samples=pops[0])):
+        #const = ts.breakpoints(1)[breakpoint+1] -ts.breakpoints(1)[breakpoint]
+        for site in tree.sites():
+            for mutation in site.mutations:
+                x1 = tree.num_tracked_samples(mutation.node)
+                x2 = tree.num_samples(mutation.node) - tree.num_tracked_samples(mutation.node)
+                f = (x1*(n2-x2) + x2*(n1-x1))/(n1*n2) - x1*(n1-x1)/(n1*(n1-1)) - x2*(n2-x2)/(n2*(n2-1))
+                stat += f
     return(stat)
-pops = [[0,1,2],[3,4,5]]     
+pops = [[0,1,2],[3,4,5,6]]     
 print(F2(ts,pops))
 print(ts.f2(pops))
-ts1 = msprime.simulate(population_configurations=pop_configs,migration_matrix=M,mutation_rate = 0.07,recombination_rate=0,random_seed=5)
-ts2 = msprime.simulate(population_configurations=pop_configs,migration_matrix=M,mutation_rate = 0.07,recombination_rate=0,random_seed=6)
-ts3 = msprime.simulate(population_configurations=pop_configs,migration_matrix=M,mutation_rate = 0.07,recombination_rate=0,random_seed=7)
-ts4 = msprime.simulate(population_configurations=pop_configs,migration_matrix=M,mutation_rate = 0.07,recombination_rate=1,random_seed=8)
+ts1 = msprime.simulate(population_configurations=pop_configs,migration_matrix=M,mutation_rate = 0.07,recombination_rate=0.5,random_seed=5)
+ts2 = msprime.simulate(population_configurations=pop_configs,migration_matrix=M,mutation_rate = 0.07,recombination_rate=0.1,random_seed=6)
+ts3 = msprime.simulate(population_configurations=pop_configs,migration_matrix=M,mutation_rate = 0.07,recombination_rate=0.3,random_seed=7)
+ts4 = msprime.simulate(population_configurations=pop_configs,migration_matrix=M,mutation_rate = 0.07,recombination_rate=1.4,random_seed=8)
 print(F2(ts1,pops))
 print(ts1.f2(pops))
 print(F2(ts2,pops))
