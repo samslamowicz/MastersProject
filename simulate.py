@@ -39,5 +39,5 @@ def simulate(data,mutations,divergence_time,length,pop_configs,pops,Ne,recomb,di
         d = np.subtract(sim_stat,ref_stat)
         discrepancies[i] = d
     return(samples,discrepancies)
-attempt1 = simulate(ts_ref,0.05,"uniform",length,pop_configs,pops,Ne,recomb,divergence_event2,prior_parameters=(0.2,(100,300)),iters=5000)
+attempt1 = simulate(ts_ref,0.05,"uniform",length,pop_configs,pops,Ne,recomb,divergence_event2,prior_parameters=(0.2,(100,300)),iters=5)
 np.save('simulations',a)
