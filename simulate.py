@@ -24,11 +24,11 @@ def simulate(data,mutations,divergence_time,length,pop_configs,pops,Ne,recomb,di
         elif mutations == "uniform":
             mutation_rate_sim = np.random.uniform(prior_parameters[0][0],prior_parameters[0][1])
         else:
-        mutation_rate_sim = mutations
+            mutation_rate_sim = mutations
         if divergence_time == "exponential":
             divergence_time_sim = min(np.random.exponential(prior_parameters[1]),1000)
         elif divergence_time == "uniform":
-        divergence_time_sim = min(np.random.uniform(prior_parameters[1][0],prior_parameters[1][1]),1000)
+            divergence_time_sim = min(np.random.uniform(prior_parameters[1][0],prior_parameters[1][1]),1000)
         else:
             divergence_time_sim = divergence_time
         divergence_event1 = msprime.MassMigration(time = divergence_time_sim, source = 1, dest = 0, proportion = 1)
