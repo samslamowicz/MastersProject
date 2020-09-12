@@ -45,4 +45,4 @@ module load python/3.7.4
 module load gsl/2.6
 
 # The job command(s):
-python Admix-split_simulate.py
+python3 Admix-split_simulate.py
