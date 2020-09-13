@@ -108,7 +108,8 @@ def ABCsimulate(iterations):
     samples=np.zeros((iterations,2))
     for i in range(iterations):
         t = (np.random.uniform(1,95),np.random.uniform(1,95))
-        t_a,t_s = (max(t),min(t))    
+        t_a,t_s = (max(t),min(t))
+        alpha = np.random.uniform(0,1)
         ts = ts_sim(t_a,t_s,alpha)
         stats[i] = list(local_ancestry_stats(ts,[1,2]))+standard_stats(ts)
         samples[i] = [t_a,alpha]
