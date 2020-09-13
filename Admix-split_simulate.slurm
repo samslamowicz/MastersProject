@@ -41,7 +41,7 @@ fi
 
 # The modules to load:
 module load gcccore/8.3.0
-module load python/3.8.5
+module load python/3.8.2
 module load gsl/2.6
 
 # The job command(s):
