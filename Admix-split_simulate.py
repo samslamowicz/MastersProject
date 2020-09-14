@@ -31,8 +31,9 @@ def ts_sim(t_a,t_s,alpha):
 
 def generate_ancestry_table(ts,samples):
     census_ancestors = list(compress(list(range(ts.num_nodes)), ts.tables.nodes.flags==1048576))
-    ancestry_table = np.array(ts.tables.link_ancestors(samples=samples,ancestors=census_ancestors))
+    ancestry_table = ts.tables.link_ancestors(samples=samples,ancestors=census_ancestors)
     return ancestry_table
+
 def local_ancestry(sample_id,ancestry_table,pop_id):
     sample_anc = np.array(list(compress(ancestry_table, list(ancestry_table[:,3]==sample_id))))
     sample_anc = sample_anc[sample_anc[:,0].argsort()]
@@ -120,6 +121,7 @@ ts = ts_sim(60,50,0.5)
 samples = list(ts.samples(population=1))
 t = generate_ancestry_table(ts,samples)
 print(t)
+print(np.array(t))
 
 
 stats,samples = ABCsimulate(1)
