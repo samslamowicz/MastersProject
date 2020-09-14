@@ -27,6 +27,8 @@ def ts_sim(t_a,t_s,alpha):
     ts = msprime.simulate(population_configurations = pop_configs,length = length,mutation_rate=mutation_rate,
                       demographic_events = demographic_events, recombination_rate = recomb)
     return(ts)
+
+
 def generate_ancestry_table(ts,samples):
     census_ancestors = list(compress(list(range(ts.num_nodes)), ts.tables.nodes.flags==1048576))
     ancestry_table = np.array(ts.tables.link_ancestors(samples=samples,ancestors=census_ancestors))
@@ -114,6 +116,12 @@ def ABCsimulate(iterations):
         stats[i] = list(local_ancestry_stats(ts,[2],[0,3]))+list(local_ancestry_stats(ts,[1],[0,3]))+standard_stats(ts)
         samples[i] = [t_a,alpha]
     return(stats,samples)
+ts = ts_sim(40,50,0.5)
+samples = list(ts.samples(population=1))
+t = generate_ancestry_table(ts,samples)
+print(t)
+
+
 stats,samples = ABCsimulate(10000)
 savetxt('./stats1.csv', stats, delimiter=',')
 savetxt('./samples1.csv', samples, delimiter=',')
