@@ -106,7 +106,7 @@ def standard_stats(ts):
              ts.diversity(),ts.Tajimas_D(),ts.segregating_sites()]
     return stats
 def ABCsimulate(iterations):
-    stats=np.zeros((iterations,35))
+    stats=np.zeros((iterations,39))
     samples=np.zeros((iterations,2))
     for i in range(iterations):
         t = (np.random.uniform(1,95),np.random.uniform(1,95))
@@ -116,12 +116,12 @@ def ABCsimulate(iterations):
         stats[i] = list(local_ancestry_stats(ts,[2],[0,3]))+list(local_ancestry_stats(ts,[1],[0,3]))+standard_stats(ts)
         samples[i] = [t_a,alpha]
     return(stats,samples)
-ts = ts_sim(40,50,0.5)
+ts = ts_sim(60,50,0.5)
 samples = list(ts.samples(population=1))
 t = generate_ancestry_table(ts,samples)
 print(t)
 
 
-stats,samples = ABCsimulate(10000)
+stats,samples = ABCsimulate(1)
 savetxt('./stats1.csv', stats, delimiter=',')
 savetxt('./samples1.csv', samples, delimiter=',')
