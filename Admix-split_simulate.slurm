@@ -41,8 +41,8 @@ fi
 
 # The modules to load:
 module load gcccore/8.3.0
-module load python/3.8.2
+module load python/3.7.4
 module load gsl/2.6
 
 # The job command(s):
-python3 Admix-split_simulate.py
+python Admix-split_simulate.py
