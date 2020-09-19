@@ -6,8 +6,8 @@ from numpy import asarray
 from numpy import savetxt
 
 print('test')
-def ts_sim(t_a,t_s,alpha):
-    t_as = 100
+def ts_sim(t_a,t_as,alpha):
+    t_s = 100
     N1 = 200
     pop_configs = [
         msprime.PopulationConfiguration(sample_size=50, growth_rate = 0,initial_size=N1),
@@ -15,11 +15,11 @@ def ts_sim(t_a,t_s,alpha):
         msprime.PopulationConfiguration(sample_size=50, growth_rate = 0,initial_size=N1),
         msprime.PopulationConfiguration(sample_size=50, growth_rate = 0,initial_size=N1)]
 
-    demographic_events = [msprime.MassMigration(time = t_s, source = 2, dest = 1, proportion = 1),
+    demographic_events = [msprime.MassMigration(time = t_as, source = 2, dest = 1, proportion = 1),
                           msprime.MassMigration(time = t_a, source = 1, dest = 0, proportion = alpha),
                           msprime.MassMigration(time = t_a+0.001, source = 1, dest = 3, proportion = 1),
                           msprime.CensusEvent(time=t_a+0.002),
-                          msprime.MassMigration(time = t_as, source = 3, dest = 0, proportion = 1)
+                          msprime.MassMigration(time = t_s, source = 3, dest = 0, proportion = 1)
                          ]       
     length = 248956422
     recomb = 1.14856e-08
@@ -31,27 +31,36 @@ def ts_sim(t_a,t_s,alpha):
 
 def generate_ancestry_table(ts,samples):
     census_ancestors = list(compress(list(range(ts.num_nodes)), ts.tables.nodes.flags==1048576))
-    ancestry_table = ts.tables.link_ancestors(samples=samples,ancestors=census_ancestors)
+    ancestry_table = np.array(ts.tables.link_ancestors(samples=samples,ancestors=census_ancestors))
     return ancestry_table
-
-def local_ancestry(sample_id,ancestry_table,pop_id):
-    sample_anc = np.array(list(compress(ancestry_table, list(ancestry_table[:,3]==sample_id))))
-    sample_anc = sample_anc[sample_anc[:,0].argsort()]
+def local_ancestry(samples,ancestry_table,pop_id):
+    anc = ancestry_table[ancestry_table[:,0].argsort()]
+    num_samples = max(samples) + 1
     diff_pop = False
-    tract_pop = pop_id[int(sample_anc[0,2])]
-    tracts = []
-    tract_ids = []
-    tract_start = 0
-    for i in range(np.shape(sample_anc)[0]):
-        diff_pop = pop_id[int(sample_anc[i,2])] - tract_pop
+    tract_pop = [0]*num_samples
+    for j in range(num_samples):
+        sample = int(anc[j,3])
+        tract_pop[sample] = pop_id[int(anc[j,2])]
+    tracts = [[] for i in range(num_samples)]
+    tract_ids = [[] for i in range(num_samples)]
+    tract_start = [0 for i in range(num_samples)]
+    sample_index = [0]
+    tract_end = max(anc[:,1])
+    for k in range(np.shape(anc)[0]):
+        #sample = samples.index(int(anc[k,3]))
+        sample = int(anc[k,3])
+        current_pop = pop_id[int(anc[k,2])]
+        diff_pop = current_pop - tract_pop[sample]
         if diff_pop:
-            tracts.append(sample_anc[i,0]-tract_start)
-            tract_ids.append(tract_pop)
-            tract_start = sample_anc[i,0]
-        elif i == np.shape(sample_anc)[0]-1:
-            tracts.append(sample_anc[i,1]-tract_start)
-            tract_ids.append(tract_pop)
-        tract_pop = pop_id[int(sample_anc[i,2])]
+            tracts[sample].append(anc[k,0]-tract_start[sample])
+            tract_ids[sample].append(tract_pop[sample])
+            tract_start[sample] = anc[k,0]
+        elif anc[k,1] == tract_end:
+            tracts[sample].append(anc[k,1]-tract_start[sample])
+            tract_ids[sample].append(tract_pop[sample])
+        tract_pop[sample] = current_pop
+    tracts = [i for i in tracts if i]
+    tract_ids = [i for i in tract_ids if i]
     return(tracts,tract_ids)
 #ts - tree sequence
 #sample_pops - population id of samples for which local ancestry statistics are calculated
@@ -67,11 +76,11 @@ def local_ancestry_stats(ts,sample_pops,anc_pops,plot=False,return_l=False):
     L_0 = []#all tract lengths with ancestry from ancestral population 0
     L_1 = []#all tract lengths with ancestry from ancestral population 1
     lowerpop = min(anc_pops)
-    for j in range(len(samples)):
-        l,i = local_ancestry(samples[j],ancestry_table,pop_id)
-        L.extend(l)
-        l_0 = list(compress(l,[bool(j) for j in np.array(i)-lowerpop]))
-        l_1 = list(compress(l,[not bool(j) for j in np.array(i)-lowerpop]))
+    tracts,tract_ids = local_ancestry(samples,ancestry_table,pop_id)
+    for j in range(len(tracts)):
+        L.extend(tracts[j])
+        l_0 = list(compress(tracts[j],[bool(i) for i in np.array(tract_ids[j])-lowerpop]))
+        l_1 = list(compress(tracts[j],[not bool(i) for i in np.array(tract_ids[j])-lowerpop]))
         L_0.extend(l_0)
         L_1.extend(l_1)
     if L_0:
@@ -108,22 +117,14 @@ def standard_stats(ts):
     return stats
 def ABCsimulate(iterations):
     stats=np.zeros((iterations,39))
-    samples=np.zeros((iterations,2))
+    samples=np.zeros((iterations,3))
     for i in range(iterations):
         t = (np.random.uniform(1,95),np.random.uniform(1,95))
-        t_a,t_s = (max(t),min(t))    
+        t_a,t_as = (max(t),min(t))    
         alpha = np.random.uniform(0,1)
-        ts = ts_sim(t_a,t_s,alpha)
+        ts = ts_sim(t_a,t_as,alpha)
         stats[i] = list(local_ancestry_stats(ts,[2],[0,3]))+list(local_ancestry_stats(ts,[1],[0,3]))+standard_stats(ts)
-        samples[i] = [t_a,alpha]
+        samples[i] = [t_a,t_as,alpha]
     return(stats,samples)
-ts = ts_sim(60,50,0.5)
-samples = list(ts.samples(population=1))
-t = generate_ancestry_table(ts,samples)
-print(t)
-print(np.array(t))
-
-
 stats,samples = ABCsimulate(1)
-savetxt('./stats1.csv', stats, delimiter=',')
-savetxt('./samples1.csv', samples, delimiter=',')
+print(stats,samples)
