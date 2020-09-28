@@ -94,6 +94,14 @@ def local_ancestry_stats(ts,sample_pops,anc_pops,plot=False):
     for tracts in tracts_list:
         stats.extend(calculated_stats(tracts,total_length,inc_ratio=True))
     return(stats)
+def standard_stats(ts):
+    samples = ts.samples()
+    pops = [ts.samples(population=0),ts.samples(population=1),ts.samples(population=2),ts.samples(population=3)]
+    stats = [ts.f2([pops[0],pops[1]]),ts.f2([pops[0],pops[2]]),ts.f2([pops[0],pops[3]]),ts.f2([pops[1],pops[2]]),ts.f2([pops[1],pops[3]]),ts.f2([pops[2],pops[3]]),
+             ts.Fst([pops[0],pops[1]]),ts.Fst([pops[0],pops[2]]),ts.Fst([pops[0],pops[3]]),ts.Fst([pops[1],pops[2]]),ts.Fst([pops[1],pops[3]]),ts.Fst([pops[2],pops[3]]),
+             ts.f3([pops[2],pops[0],pops[3]]),ts.f3([pops[1],pops[0],pops[3]]),ts.f4([pops[0],pops[1],pops[2],pops[3]]),ts.f4([pops[0],pops[2],pops[1],pops[3]]),
+             ts.diversity(),ts.Tajimas_D(),ts.segregating_sites()]
+    return stats
 def ABCsimulate(iterations):
     stats=np.zeros((iterations,41))
     samples=np.zeros((iterations,6))
